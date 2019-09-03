@@ -47,15 +47,15 @@ instance Read Note where
         +++ (char 'C' $> NC)
         )
 
-scalaEncoded :: Scale -> String
-scalaEncoded PentatonicMinor = "1"
-scalaEncoded PentatonicMajor = "2"
-scalaEncoded Chromatic = "3"
-scalaEncoded Hexatonic = "4"
-scalaEncoded Major = "5"
-scalaEncoded Minor = "6"
-scalaEncoded Hirajoshi = "7"
-scalaEncoded Phrygian = "8"
+scaleEncoded :: Scale -> String
+scaleEncoded PentatonicMinor = "1"
+scaleEncoded PentatonicMajor = "2"
+scaleEncoded Chromatic = "3"
+scaleEncoded Hexatonic = "4"
+scaleEncoded Major = "5"
+scaleEncoded Minor = "6"
+scaleEncoded Hirajoshi = "7"
+scaleEncoded Phrygian = "8"
 
 numberMapping :: [Char]
 numberMapping = ['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9'] ++ ['+', '/']
@@ -92,7 +92,7 @@ linkShawzin :: Scale -> Interval -> [Track] -> String
 linkShawzin scale interval tracks = linkHeader scale ++ linkBody 0 interval tracks
 
 linkHeader :: Scale -> String
-linkHeader = scalaEncoded
+linkHeader = scaleEncoded
 
 linkBody :: Number -> Interval -> [Track] -> String
 linkBody _ _ [] = ""

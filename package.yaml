@@ -1,0 +1,29 @@
+name:                shawzin-compiler
+version:             0.1.0.0
+github:              "yuxuanchiadm/ShawzinCompiler"
+license:             MIT
+author:              "Yu Xuanchi"
+maintainer:          "yuxuanchiadm@126.com"
+copyright:           "2019 Yu Xuanchi"
+
+extra-source-files:
+- README.md
+
+description:         Please see the README on GitHub at <https://github.com/yuxuanchiadm/ShawzinCompiler#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+
+executables:
+  shawzin-compiler:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - shawzin-compiler
