@@ -9,11 +9,13 @@ import Text.ParserCombinators.ReadPrec (lift)
 import System.Exit
 
 data Scale = PentatonicMinor | PentatonicMajor | Chromatic | Hexatonic | Major | Minor | Hirajoshi | Phrygian deriving (Show, Read, Eq, Ord)
-type Number = Int
 data Note = N0 | N1 | N2 | N3 | N4 | N5 | N6 | N7 | N8 | N9 | NA | NB | NC deriving (Eq, Ord)
+data Number = Number Int Int
 type Track = [Note]
 type Interval = Int
+type Position = Int
 data Song = Song Scale Interval [Track] deriving (Show, Read, Eq, Ord)
+type Code = String
 
 instance Show Note where
     show N0 = "0"
@@ -47,60 +49,58 @@ instance Read Note where
         +++ (char 'C' $> NC)
         )
 
-scaleEncoded :: Scale -> String
-scaleEncoded PentatonicMinor = "1"
-scaleEncoded PentatonicMajor = "2"
-scaleEncoded Chromatic = "3"
-scaleEncoded Hexatonic = "4"
-scaleEncoded Major = "5"
-scaleEncoded Minor = "6"
-scaleEncoded Hirajoshi = "7"
-scaleEncoded Phrygian = "8"
+class Encodable a where
+    encode :: a -> Code
 
-numberMapping :: [Char]
-numberMapping = ['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9'] ++ ['+', '/']
+instance Encodable Scale where
+    encode PentatonicMinor = "1"
+    encode PentatonicMajor = "2"
+    encode Chromatic = "3"
+    encode Hexatonic = "4"
+    encode Major = "5"
+    encode Minor = "6"
+    encode Hirajoshi = "7"
+    encode Phrygian = "8"
 
-numberPaddedEncoded :: Number -> Int -> String
-numberPaddedEncoded i padTo = replicate (max 0 (padTo - length result)) 'A' ++ result where
-    result :: String
-    result = numberEncoded i
+instance Encodable Int where
+    encode i | i < 0 = ""
+             | i >= 0 && i < 64 = [(['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9'] ++ ['+', '/']) !! i]
+             | otherwise = encode (i `div` 64) ++ encode (i `mod` 64)
 
-numberEncoded :: Number -> String
-numberEncoded i | i < 0 = ""
-                | i >= 0 && i < 64 = [numberMapping !! i]
-                | otherwise = numberEncoded (i `div` 64) ++ numberEncoded (i `mod` 64)
+instance Encodable Number where
+    encode (Number i padTo) = let code = encode i in replicate (max 0 (padTo - length code)) 'A' ++ code
 
-noteEncoded :: Note -> String
-noteEncoded N0 = "A"
-noteEncoded N1 = "B"
-noteEncoded N2 = "C"
-noteEncoded N3 = "E"
-noteEncoded N4 = "J"
-noteEncoded N5 = "K"
-noteEncoded N6 = "M"
-noteEncoded N7 = "R"
-noteEncoded N8 = "S"
-noteEncoded N9 = "U"
-noteEncoded NA = "h"
-noteEncoded NB = "i"
-noteEncoded NC = "k"
+instance Encodable Note where
+    encode N0 = "A"
+    encode N1 = "B"
+    encode N2 = "C"
+    encode N3 = "E"
+    encode N4 = "J"
+    encode N5 = "K"
+    encode N6 = "M"
+    encode N7 = "R"
+    encode N8 = "S"
+    encode N9 = "U"
+    encode NA = "h"
+    encode NB = "i"
+    encode NC = "k"
 
-linkSong :: Song -> String
+linkSong :: Song -> Code
 linkSong (Song scale interval tracks) = linkShawzin scale interval tracks
 
-linkShawzin :: Scale -> Interval -> [Track] -> String
+linkShawzin :: Scale -> Interval -> [Track] -> Code
 linkShawzin scale interval tracks = linkHeader scale ++ linkBody 0 interval tracks
 
-linkHeader :: Scale -> String
-linkHeader = scaleEncoded
+linkHeader :: Scale -> Code
+linkHeader = encode
 
-linkBody :: Number -> Interval -> [Track] -> String
+linkBody :: Position -> Interval -> [Track] -> Code
 linkBody _ _ [] = ""
 linkBody position interval tracks = currentNotesEncoded ++ linkBody (position + interval) interval tracksTail where
-    currentNotesEncoded :: String
+    currentNotesEncoded :: Code
     currentNotesEncoded = concat $ do
         note <- tracksHead
-        return $ if note == N0 then "" else noteEncoded note ++ numberPaddedEncoded position 2
+        return $ if note == N0 then "" else encode note ++ encode (Number position 2)
     tracksHead :: [Note]
     tracksHead = do
         track <- tracks
@@ -125,7 +125,7 @@ compileSong input = readLines $ lines input where
         return $ Song scale interval tracks
     readLines _ = Nothing
 
-compileLinkSong :: String -> Maybe String
+compileLinkSong :: String -> Maybe Code
 compileLinkSong input = linkSong <$> compileSong input
 
 compileLinkSongIO :: IO ()
